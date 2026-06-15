@@ -1,4 +1,4 @@
-"""OHLCV data loader — CSV and Binance REST (stdlib only, no auth needed).
+"""OHLCV data loader — CSV, Binance REST, and Exness/MT5.
 
 The single public surface is `load_bars()` which returns `list[Bar]` regardless
 of source. Everything else is an implementation detail.
@@ -6,9 +6,11 @@ of source. Everything else is an implementation detail.
 Supported sources:
   - CSV file  (ts,open,high,low,close[,volume])
   - Binance   (GET /api/v3/klines, public endpoint, no API key)
+  - Exness / any MT5 broker  (requires MetaTrader5 package + running terminal)
 
 Binance intervals: 1m 3m 5m 15m 30m 1h 2h 4h 6h 8h 12h 1d 3d 1w 1M
 Binance limit:     max 1000 bars per request; this loader pages automatically.
+MT5 intervals:     1m 3m 5m 15m 30m 1h 2h 4h 6h 8h 12h 1d 1w 1M
 """
 from __future__ import annotations
 
@@ -41,27 +43,38 @@ def load_bars(
     start_ms: int | None = None,
     end_ms: int | None = None,
     base_url: str = _BINANCE_BASE,
+    mt5: bool = False,
 ) -> list[Bar]:
     """Return bars from the specified source.
 
-    Exactly one of `csv_path` or `symbol` must be provided.
+    Exactly one source must be chosen:
+      load_bars(csv_path="btc.csv")                        # from file
+      load_bars(symbol="BTCUSDT", limit=2000)              # from Binance
+      load_bars(symbol="BTCUSD",  limit=2000, mt5=True)   # from Exness/MT5
 
     Args:
-        csv_path:  Path to a CSV with columns ts,open,high,low,close[,volume].
-        symbol:    Binance market symbol, e.g. "BTCUSDT".
-        interval:  Binance kline interval (default "1h").
-        limit:     Maximum number of bars to return (Binance: pages if > 1000).
-        start_ms:  Binance start time in epoch milliseconds.
-        end_ms:    Binance end time in epoch milliseconds.
-        base_url:  Override the Binance base URL (for tests or self-hosted proxy).
+        csv_path:  CSV with columns ts,open,high,low,close[,volume].
+        symbol:    Instrument symbol. Binance: "BTCUSDT". MT5/Exness: "BTCUSD".
+        interval:  Bar timeframe — same strings for both backends:
+                   1m 5m 15m 30m 1h 4h 1d …
+        limit:     Bars to fetch (Binance pages past 1000 automatically).
+        start_ms:  Binance only — epoch ms start time.
+        end_ms:    Binance only — epoch ms end time.
+        base_url:  Binance only — override base URL.
+        mt5:       If True, fetch via MetaTrader5 instead of Binance.
+                   Requires: pip install MetaTrader5 (Windows) + MT5 terminal open.
     """
-    if csv_path and symbol:
-        raise ValueError("supply csv_path OR symbol, not both")
-    if not csv_path and not symbol:
-        raise ValueError("supply either csv_path or symbol")
+    sources = sum([bool(csv_path), bool(symbol)])
+    if sources != 1:
+        raise ValueError("supply exactly one of: csv_path, symbol")
 
     if csv_path:
         return list(_from_csv(csv_path))
+
+    if mt5:
+        from .mt5_loader import load_from_mt5
+        return load_from_mt5(symbol=symbol, interval=interval, count=limit)
+
     return list(_from_binance(
         symbol=symbol, interval=interval, limit=limit,
         start_ms=start_ms, end_ms=end_ms, base_url=base_url,

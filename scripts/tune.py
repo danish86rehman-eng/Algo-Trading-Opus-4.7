@@ -278,10 +278,14 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Tune APEX strategy parameters via walk-forward.")
     src = p.add_mutually_exclusive_group()
     src.add_argument("--csv",    metavar="FILE", help="OHLCV CSV (ts,open,high,low,close[,volume])")
-    src.add_argument("--symbol", metavar="SYM",  help="Fetch live from Binance, e.g. BTCUSDT")
-    p.add_argument("--interval", default="1h",   help="Binance interval when using --symbol (default 1h)")
-    p.add_argument("--limit",    type=int, default=1000,
-                   help="Bars to fetch when using --symbol (default 1000)")
+    src.add_argument("--symbol", metavar="SYM",
+                     help="Symbol to fetch — Binance: BTCUSDT, Exness/MT5: BTCUSD XAUUSD …")
+    p.add_argument("--mt5",      action="store_true",
+                   help="Fetch from Exness/MT5 instead of Binance (use with --symbol)")
+    p.add_argument("--interval", default="4h",
+                   help="Bar timeframe when using --symbol (default 4h)")
+    p.add_argument("--limit",    type=int, default=2000,
+                   help="Bars to fetch when using --symbol (default 2000)")
     p.add_argument("--base-url", default="https://api.binance.com",
                    help="Binance base URL override (default https://api.binance.com)")
     p.add_argument("--splits",   type=int, default=5,  help="Walk-forward folds (default 5)")
@@ -302,10 +306,12 @@ def main() -> None:
         bars = bars_from_csv(args.csv)
     elif args.symbol:
         from apex.data.loader import load_bars
-        print(f"\nFetching {args.limit} × {args.interval} bars for {args.symbol} from Binance …")
+        source = "Exness/MT5" if args.mt5 else "Binance"
+        print(f"\nFetching {args.limit} × {args.interval} bars for {args.symbol} from {source} …")
         bars = load_bars(
             symbol=args.symbol, interval=args.interval,
             limit=args.limit, base_url=args.base_url,
+            mt5=args.mt5,
         )
         print(f"  got {len(bars)} bars")
     else:
