@@ -249,12 +249,51 @@ The 5C seam already makes the notifier swappable. Add:
 
 ---
 
-## 12. Open questions for the operator
+## 12. Reachability verification + self-host fallback runbook
+
+**Why this is a runbook, not a checked fact:** ntfy.sh reachability could not be confirmed
+from outside Pakistan. (1) Datacenter/CI egress is policy-restricted and not representative;
+(2) PTA blocking is path-specific — a mobile carrier and a DSL line can behave differently —
+so only a test on the **operator's own PK connection** is authoritative. No public reports
+were found of ntfy.sh being PTA-blocked, but absence of reports ≠ confirmation.
+
+### 12.1 Go/no-go test (run on the real PK connection, before building)
+```powershell
+# Publish, then read back. Run from C:\apex.
+curl.exe -d "apex reachability test" https://ntfy.sh/apex_test_9f3k
+curl.exe "https://ntfy.sh/apex_test_9f3k/json?poll=1&since=5m"   # should echo the message
+```
+Then the real end-to-end check: install the **ntfy app**, subscribe to `apex_test_9f3k`,
+re-publish, confirm the push lands. **Test on Wi-Fi AND mobile data** — carriers block
+differently. Timeout / RST / hang on any path ⇒ blocked or throttled there.
+
+### 12.2 Decision
+- **All paths OK** → ntfy.sh is viable. Still prefer reserved topics (Pro) for the token ACL
+  in §7, or self-host for full control.
+- **Any path blocked/flaky** → **self-host** (next).
+
+### 12.3 Self-host fallback (also the recommended default)
+The PTA blocks *known* hosts by SNI / IP / DNS. Your own domain on a generic VPS is not on any
+blocklist, which sidesteps regional blocking **and** gives the per-topic read/write token ACLs
+the §7 security model wants anyway.
+1. VPS (any region reachable from PK) running ntfy via Docker; put it behind **your own domain**,
+   ideally **Cloudflare-fronted** (shared IP + standard SNI = hard to single out).
+2. Enable auth: create read token (bot) + write token (phone); lock the control topic ACL.
+3. Point the bot at it: `NTFY_BASE_URL=https://ntfy.example.com` — **no other code changes**;
+   the entire 5D architecture is unchanged.
+4. Re-run §12.1 against the self-hosted URL to confirm.
+
+> Net effect: reachability is a config/ops decision (`NTFY_BASE_URL`), not an architectural one.
+> The design in this doc holds whether the backend is ntfy.sh or self-hosted.
+
+---
+
+## 13. Open questions for the operator
 
 1. **Self-hosted ntfy vs ntfy.sh reserved topics (Pro)?** Determines the transport-auth model
    in §7. (Self-hosting also de-risks regional blocking.)
-2. **Is ntfy.sh actually reachable & reliable from your PK network?** Telegram is blocked;
-   validate ntfy before building, or plan to self-host behind your own domain/Cloudflare.
+2. **Is ntfy.sh actually reachable & reliable from your PK network?** Run the §12 runbook
+   before building; if any path is blocked, self-host per §12.3 (recommended default anyway).
 3. **What is 5C's exact `Notifier` method signature** and event model? (§2 is assumed.)
 4. **Does the bot core already expose a kill-switch / state API** for `ControlPlane` to wrap,
    or does 5D need to define it?
