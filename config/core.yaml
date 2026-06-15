@@ -1,0 +1,22 @@
+# APEX Phase 6 — strategy + backtest configuration
+# All numeric bands here are placeholders; tune them via walk-forward validation.
+
+strategy:
+  atr_period: 14
+  atr_min: 0.005      # filter out markets too quiet  (< 0.5% ATR/price)
+  atr_max: 0.050      # filter out runaway volatility (> 5.0% ATR/price)
+  momentum_period: 14
+  max_spread: 0.003   # skip bars with > 0.3% high-low spread
+  score_threshold: 0.30  # |momentum score| needed to generate BUY/SELL
+
+execution:
+  initial_cash: 10000.0
+  slippage_bps: 5.0   # one-way simulated slippage
+  fee_bps: 5.0        # taker fee per side
+  position_size: 0.10 # fraction of available cash to risk per trade
+
+backtest:
+  warmup_bars: 50             # bars consumed before first signal
+  window_size: 200            # rolling indicator window cap
+  walk_forward_splits: 5      # number of WF folds
+  in_sample_fraction: 0.70    # fraction of each fold that is in-sample
