@@ -1,0 +1,12 @@
+# APEX trading bot — optional dependencies
+#
+# The core strategy + backtest engine (apex/strategy, apex/backtest, apex/comms, apex/ops)
+# uses only Python stdlib. Install these for live trading on Exness/MT5.
+#
+# pip install -r requirements.txt
+
+# MetaTrader5 market data + order execution (Windows only)
+MetaTrader5>=5.0.45
+
+# Test runner (dev only)
+pytest>=7.0
