@@ -276,13 +276,20 @@ backtest:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Tune APEX strategy parameters via walk-forward.")
-    p.add_argument("--csv",       metavar="FILE",  help="OHLCV CSV (ts,open,high,low,close[,volume])")
-    p.add_argument("--splits",    type=int, default=5,  help="Walk-forward folds (default 5)")
-    p.add_argument("--warmup",    type=int, default=50, help="Warmup bars (default 50)")
-    p.add_argument("--top",       type=int, default=5,  help="Show top N configs (default 5)")
-    p.add_argument("--write",     action="store_true",  help="Write best config to config/core.yaml")
+    src = p.add_mutually_exclusive_group()
+    src.add_argument("--csv",    metavar="FILE", help="OHLCV CSV (ts,open,high,low,close[,volume])")
+    src.add_argument("--symbol", metavar="SYM",  help="Fetch live from Binance, e.g. BTCUSDT")
+    p.add_argument("--interval", default="1h",   help="Binance interval when using --symbol (default 1h)")
+    p.add_argument("--limit",    type=int, default=1000,
+                   help="Bars to fetch when using --symbol (default 1000)")
+    p.add_argument("--base-url", default="https://api.binance.com",
+                   help="Binance base URL override (default https://api.binance.com)")
+    p.add_argument("--splits",   type=int, default=5,  help="Walk-forward folds (default 5)")
+    p.add_argument("--warmup",   type=int, default=50, help="Warmup bars (default 50)")
+    p.add_argument("--top",      type=int, default=5,  help="Show top N configs (default 5)")
+    p.add_argument("--write",    action="store_true",  help="Write best config to config/core.yaml")
     p.add_argument("--synthetic-n", type=int, default=800, metavar="N",
-                   help="Bars of synthetic data when no CSV given (default 800)")
+                   help="Bars of synthetic data when no source given (default 800)")
     return p.parse_args()
 
 
@@ -293,8 +300,16 @@ def main() -> None:
     if args.csv:
         print(f"\nLoading data from {args.csv!r} …")
         bars = bars_from_csv(args.csv)
+    elif args.symbol:
+        from apex.data.loader import load_bars
+        print(f"\nFetching {args.limit} × {args.interval} bars for {args.symbol} from Binance …")
+        bars = load_bars(
+            symbol=args.symbol, interval=args.interval,
+            limit=args.limit, base_url=args.base_url,
+        )
+        print(f"  got {len(bars)} bars")
     else:
-        print(f"\nNo --csv supplied; using {args.synthetic_n}-bar synthetic data.")
+        print(f"\nNo --csv or --symbol supplied; using {args.synthetic_n}-bar synthetic data.")
         bars = synthetic_bars(args.synthetic_n)
 
     print(f"Loaded {len(bars)} bars.\n")
