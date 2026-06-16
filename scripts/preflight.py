@@ -4,7 +4,7 @@ Validates every dependency in order so you know exactly what's ready
 and what needs fixing before real money is at risk.
 
 Usage:
-    python3 scripts/preflight.py BTCUSD --interval 4h
+    python3 scripts/preflight.py XAUUSD --interval 4h
 
 Exit code 0 = all checks passed. Non-zero = something needs fixing.
 """
@@ -160,7 +160,7 @@ def check_config(r: CheckResult) -> None:
     if not os.path.exists(path):
         r.fail(
             "config/core.yaml not found",
-            "Run: python3 scripts/tune.py --symbol BTCUSD --interval 4h --mt5 --write"
+            "Run: python3 scripts/tune.py --symbol XAUUSD --interval 4h --mt5 --write"
         )
         return
 
@@ -175,7 +175,7 @@ def check_config(r: CheckResult) -> None:
             r.warn(
                 "config looks like placeholder defaults (not tuned)",
                 "Run tune.py with your real data:\n"
-                "  python3 scripts/tune.py --symbol BTCUSD --interval 4h --mt5 --write"
+                "  python3 scripts/tune.py --symbol XAUUSD --interval 4h --mt5 --write"
             )
     except Exception as exc:
         r.fail(f"config/core.yaml failed to parse: {exc}")
@@ -254,8 +254,8 @@ def check_imports(r: CheckResult) -> None:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="APEX pre-flight checks.")
-    p.add_argument("symbol",     nargs="?", default="BTCUSD",
-                   help="MT5 symbol to test (default BTCUSD)")
+    p.add_argument("symbol",     nargs="?", default="XAUUSD",
+                   help="MT5 symbol to test (default XAUUSD)")
     p.add_argument("--interval", default="4h",
                    help="Bar timeframe to test (default 4h)")
     return p.parse_args()

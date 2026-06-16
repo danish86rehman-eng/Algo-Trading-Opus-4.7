@@ -10,8 +10,8 @@ Wires together every layer built so far:
             MT5Executor    live order submission
 
 Usage:
-    python3 scripts/live.py BTCUSD --interval 4h
-    python3 scripts/live.py XAUUSD --interval 1h --lot 0.01 --dry-run
+    python3 scripts/live.py XAUUSD --interval 4h --lot 0.01 --dry-run
+    python3 scripts/live.py XAUUSD --interval 1h --lot 0.01
 
 Flags:
     --dry-run   Run the full loop but skip actual order submission (paper mode).
@@ -242,7 +242,7 @@ def parse_args() -> argparse.Namespace:
         description="APEX live trading loop (Exness/MT5 + ntfy remote control).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("symbol",      help="MT5 symbol, e.g. BTCUSD or XAUUSD")
+    p.add_argument("symbol",      help="MT5 symbol, e.g. XAUUSD or BTCUSD")
     p.add_argument("--interval",  default="4h",
                    help="Bar timeframe matching fetch_ohlcv.py (default 4h)")
     p.add_argument("--lot",       type=float, default=0.01,

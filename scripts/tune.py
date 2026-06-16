@@ -37,9 +37,9 @@ from apex.backtest.walk_forward import WalkForwardValidator, WalkForwardResult
 
 def synthetic_bars(
     n: int = 800,
-    start: float = 30_000.0,
-    drift: float = 0.0003,
-    vol: float = 0.012,
+    start: float = 2_400.0,   # gold-like price scale (XAUUSD)
+    drift: float = 0.0001,
+    vol: float = 0.005,       # gold ~0.5%/bar vs crypto ~1.2%
     seed: int = 42,
 ) -> list[Bar]:
     """Gaussian random-walk price series with realistic intraday spread."""
@@ -294,6 +294,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--write",    action="store_true",  help="Write best config to config/core.yaml")
     p.add_argument("--synthetic-n", type=int, default=800, metavar="N",
                    help="Bars of synthetic data when no source given (default 800)")
+    p.add_argument("--synthetic-price", type=float, default=2_400.0, metavar="P",
+                   help="Synthetic start price (default 2400, gold-like)")
+    p.add_argument("--synthetic-vol", type=float, default=0.005, metavar="V",
+                   help="Synthetic per-bar volatility (default 0.005, gold-like)")
     return p.parse_args()
 
 
@@ -315,8 +319,11 @@ def main() -> None:
         )
         print(f"  got {len(bars)} bars")
     else:
-        print(f"\nNo --csv or --symbol supplied; using {args.synthetic_n}-bar synthetic data.")
-        bars = synthetic_bars(args.synthetic_n)
+        print(f"\nNo --csv or --symbol supplied; using {args.synthetic_n}-bar synthetic data "
+              f"(price={args.synthetic_price:.0f} vol={args.synthetic_vol:.1%}).")
+        bars = synthetic_bars(
+            args.synthetic_n, start=args.synthetic_price, vol=args.synthetic_vol
+        )
 
     print(f"Loaded {len(bars)} bars.\n")
 

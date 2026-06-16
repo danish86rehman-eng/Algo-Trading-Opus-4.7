@@ -3,11 +3,11 @@
 
 strategy:
   atr_period: 14
-  atr_min: 0.0039      # filter out markets too quiet
-  atr_max: 0.0308      # filter out runaway volatility
+  atr_min: 0.0016      # filter out markets too quiet
+  atr_max: 0.0129      # filter out runaway volatility
   momentum_period: 14
-  max_spread: 0.0197   # skip bars with spread wider than this
-  score_threshold: 0.5792  # |momentum score| needed to generate BUY/SELL
+  max_spread: 0.0082   # skip bars with spread wider than this
+  score_threshold: 0.5812  # |momentum score| needed to generate BUY/SELL
 
 execution:
   initial_cash: 10000.0
