@@ -121,6 +121,14 @@ def check_mt5_connection(r: CheckResult, symbol: str, interval: str) -> None:
         if not info.connected:
             r.warn("terminal not connected to broker — no live data")
 
+        acct = mt5.account_info()
+        if acct is None:
+            r.fail("account_info() returned None — not logged in to a trading account")
+        else:
+            r.ok(f"account {acct.login}  server={acct.server}  "
+                 f"balance={acct.balance:.2f} {acct.currency}  "
+                 f"equity={acct.equity:.2f}  leverage=1:{acct.leverage}")
+
         # symbol check
         sym = mt5.symbol_info(symbol.upper())
         if sym is None:
